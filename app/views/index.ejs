@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html ng-app="testApp">
+<head>
+    <title><%= title %></title>
+
+    <style>
+        html,
+        body {
+            margin:0;
+            padding:0;
+            color:#000;
+            font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial", sans-serif;
+            font-size: 10pt;
+            background: #B5B9C8;
+        }
+        #body {
+            width: 100%;
+            margin:0 auto;
+            background:#8990A9;
+        }
+        #header {
+            padding:10px;
+            background: #626C90;
+            height: 40px;
+        }
+        #mainLeft {
+            float:left;
+            width:20%;
+            padding:0px;
+            background: #DEDFE5;
+        }
+        #mainWrapper {
+            float:right;
+            width:80%;
+        }
+        #mainWrapperLeft {
+            float:left;
+            width:75%;
+            padding:0px;
+            background:#DEDFE5;
+        }
+        #mainWrapperRight {
+            float:right;
+            width:25%;
+            padding:0px;
+            background: #DEDFE5;
+        }
+        #footer {
+            clear:both;
+            padding:10px;
+            background: #626C90;
+            height: 40px;
+        }
+
+    </style>
+
+    <script src="/js/angular/angular.js"></script>
+</head>
+
+<body>
+<h1><%= title %></h1>
+
+<div id="body">
+    <div id="header">header</div>
+    <div id="main">
+        <div id="mainLeft">
+            mainLeft
+            <div ng-controller="runTestController">
+                test
+            </div>
+        </div>
+        <div id="mainWrapper">
+            <div id="mainWrapperLeft" ng-controller="addTestController">
+                <form>
+                    <select ng-model="selectedHttpMethod"
+                            ng-options="opt as opt.label for opt in httpMethods">
+                    </select>
+
+                    <select ng-model="selectedProtocol"
+                            ng-options="opt as opt.label for opt in protocols">
+                    </select>
+
+                    <input type="text" ng-model="domain" /> : <input type="text" size="5" ng-model="port"/>
+
+                    <input type="text" size="50" ng-model="path"/>
+
+                    <br />
+                    Headers:<br />
+                    <div ng-repeat="header in headers">
+                        {{ header.key }} : {{ header.value}} <a href="#" ng-click="removeHeader($index)">remove</a><br />
+                    </div>
+
+                    <input type="input" ng-model="headerKey" />
+                    <input type="input" ng-model="headerValue" />
+                    <a href="#" ng-click="addHeader(headerKey, headerValue)">add header</a>
+
+                    <br />
+                    Body:<br />
+                    <textarea rows="4" cols="50" ng-model="body"></textarea> <br />
+                    <input type="button" ng-click="submitTest()" value="Submit"/>
+                </form>
+            </div>
+            <div id="mainWrapperRight">
+                mainWrapperRight
+            </div>
+        </div>
+    </div>
+    <div id="footer">footer</div>
+</div>
+
+<script>
+    var app = angular.module("testApp",[]);
+
+    app.controller("runTestController", function($scope, $http) {
+
+        $scope.testInput = {
+            url: 'http://localhost/?q={test}&q2={test2}&q3={test}',
+            httpMethod: 'POST',
+            body: '{}',
+            headers: {
+                test: 'test123',
+                test2: '{test}'
+            },
+            variables: {
+                input: {
+                    test: 123,
+                    test2: 123
+                },
+                output: [
+                    {
+                        name: 'test',
+                        value: '123'
+                    }
+                ]
+            },
+            assertions: [
+                {
+                    type: 'responseCode',
+                    expectedResponseCode: 200
+                },
+                {
+                    type: 'responseBody',
+                    responseBodyParameter: 'data.test',
+                    expectedValue: 'kevin'
+                }
+            ]
+        };
+
+        $scope.init = function(testInput) {
+            alert('initializing');
+
+            var url = resolveInputVariables(testInput.url, testInput.variables.input);
+            var headers = {};
+            angular.forEach(testInput.headers, function(value, key) {
+                var headerValue = resolveInputVariables(value, testInput.variables.input);
+                headers[key] = headerValue;
+            });
+
+            /*var request = {
+                url: 'http://localhost:1337/test',
+                headers: headers,
+                method: 'POST',
+                data: testInput
+            };*/
+
+            //$http(request);
+
+            var test = $http.get('http://localhost:1337/test');
+            alert(test);
+        }
+
+        var resolveInputVariables = function(field, variables) {
+            var returnField = field;
+            angular.forEach(variables, function(value, key) {
+                var keyField = '\{' + key + '\}';
+                returnField = returnField.replace(new RegExp(keyField, 'g'), value);
+            });
+            return returnField;
+        }
+
+        $scope.init($scope.testInput);
+    });
+
+    app.controller("addTestController", function($scope, $http) {
+        $scope.httpMethods = [
+            {label: 'GET', value: 'GET'},
+            {label: 'POST', value: 'POST'},
+            {label: 'PUT', value: 'PUT'},
+            {label: 'DELETE', value: 'DELETE'},
+        ];
+        $scope.protocols = [
+            {label: 'http', value: 'http' },
+            {label: 'https', value: 'https'}
+        ];
+
+        $scope.selectedHttpMethod = $scope.httpMethods[0];
+        $scope.selectedProtocol = $scope.protocols[0];
+        $scope.domain = 'www.google.com';
+        $scope.port = '80';
+        $scope.path = '/search?q=test';
+        $scope.body = '';
+
+        $scope.headers = [
+            {
+                key: 'Content-Type',
+                value: 'application/json'
+            }
+        ];
+
+        $scope.addHeader = function(key, value) {
+            $scope.headers.push({'key': key, 'value': value});
+        }
+
+        $scope.removeHeader = function($index) {
+            $scope.headers.splice($index, 1);
+        }
+
+        $scope.submitTest = function() {
+
+            var headers = {};
+
+            angular.forEach($scope.headers, function(header) {
+                headers[header.key] = header.value;
+            });
+
+            var url = $scope.selectedProtocol.value + '://' + $scope.domain + ':' + $scope.port + $scope.path;
+
+            // should follow schema model
+            var postData = {
+                url: url,
+                httpMethod: $scope.selectedHttpMethod.value,
+                headers: headers,
+                body: $scope.body
+            };
+
+            var request = {
+                url: 'http://localhost:1337/test',
+                method: 'POST',
+                data: postData
+            };
+
+            $http(request)
+                    .success(function() { alert('good') })
+                    .error(function() { alert('bad')});
+        }
+    });
+</script>
+
+</body>
+</html>

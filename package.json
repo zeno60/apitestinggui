@@ -1,0 +1,8 @@
+{
+  "name": "application-name",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "^4.12.2",
+    "mongoose": "^3.8.24"
+  }
+}
