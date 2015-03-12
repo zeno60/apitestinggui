@@ -1,4 +1,6 @@
-var APITest = require('mongoose').model('APITest');
+var mongoose = require('mongoose');
+var APITest = mongoose.model('APITest');
+var APITestSuite = mongoose.model('APITestSuite');
 
 exports.render = function(req, res) {
     res.render('index', {
@@ -7,8 +9,14 @@ exports.render = function(req, res) {
 };
 
 exports.get = function(req, res) {
-    APITest.find({}, function(err, places) {
-        res.json(places[0]);
+    APITest.find({}, function(err, tests) {
+        var testMap = [];
+
+        tests.forEach(function(test) {
+            testMap.push({id: test._id, name: test.testName});
+        });
+
+        res.json(testMap);
     });
 };
 
@@ -21,5 +29,31 @@ exports.create = function(req, res, next) {
         else {
             res.json(apiTest);
         }
+    });
+};
+
+exports.createSuite = function(req, res, next) {
+    var apiTestSuite = new APITestSuite(req.body);
+    apiTestSuite.save(function(err) {
+        if (err) {
+            return next(err);
+        }
+        else {
+            res.json(apiTestSuite);
+        }
+    });
+};
+
+exports.renderCreateSuite = function(req, res, next) {
+
+    res.render('suite', {
+        title: 'CREATE SUITE'
+    });
+};
+
+exports.getSuiteById = function(req, res, next) {
+    var suiteId = req.params.suiteId;
+    APITestSuite.findById(suiteId, function(err, testSuite) {
+        res.json(testSuite);
     });
 };

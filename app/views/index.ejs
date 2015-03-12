@@ -72,17 +72,14 @@
         <div id="mainWrapper">
             <div id="mainWrapperLeft" ng-controller="addTestController">
                 <form>
+                    Test Name:
+                    <input type="text" ng-model="testName" /> <br />
+
                     <select ng-model="selectedHttpMethod"
                             ng-options="opt as opt.label for opt in httpMethods">
                     </select>
 
-                    <select ng-model="selectedProtocol"
-                            ng-options="opt as opt.label for opt in protocols">
-                    </select>
-
-                    <input type="text" ng-model="domain" /> : <input type="text" size="5" ng-model="port"/>
-
-                    <input type="text" size="50" ng-model="path"/>
+                    <input type="text" ng-model="url" size="50" />
 
                     <br />
                     Headers:<br />
@@ -156,17 +153,7 @@
                 headers[key] = headerValue;
             });
 
-            /*var request = {
-                url: 'http://localhost:1337/test',
-                headers: headers,
-                method: 'POST',
-                data: testInput
-            };*/
-
-            //$http(request);
-
             var test = $http.get('http://localhost:1337/test');
-            alert(test);
         }
 
         var resolveInputVariables = function(field, variables) {
@@ -177,8 +164,6 @@
             });
             return returnField;
         }
-
-        $scope.init($scope.testInput);
     });
 
     app.controller("addTestController", function($scope, $http) {
@@ -188,16 +173,11 @@
             {label: 'PUT', value: 'PUT'},
             {label: 'DELETE', value: 'DELETE'},
         ];
-        $scope.protocols = [
-            {label: 'http', value: 'http' },
-            {label: 'https', value: 'https'}
-        ];
 
         $scope.selectedHttpMethod = $scope.httpMethods[0];
-        $scope.selectedProtocol = $scope.protocols[0];
-        $scope.domain = 'www.google.com';
-        $scope.port = '80';
-        $scope.path = '/search?q=test';
+
+        $scope.testName='test name';
+        $scope.url='http://www.google.com/search?q=test';
         $scope.body = '';
 
         $scope.headers = [
@@ -223,11 +203,10 @@
                 headers[header.key] = header.value;
             });
 
-            var url = $scope.selectedProtocol.value + '://' + $scope.domain + ':' + $scope.port + $scope.path;
-
             // should follow schema model
             var postData = {
-                url: url,
+                testName: $scope.testName,
+                url: $scope.url,
                 httpMethod: $scope.selectedHttpMethod.value,
                 headers: headers,
                 body: $scope.body

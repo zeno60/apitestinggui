@@ -1,0 +1,198 @@
+<html ng-app="testApp">
+<head>
+    <title><%= title %></title>
+    <script src="/js/angular/angular.js"></script>
+</head>
+
+<body>
+
+    <a href="/suiteview">go to suiteview</a>
+
+    <div ng-controller="getTestController">
+
+        Tests:<br />
+        <div ng-repeat="test in tests">
+            {{ test._id }} named {{ test.testName }} <a href="#" ng-click="removeTest(test._id)">remove</a>
+        </div>
+    </div>
+    <hr />
+    <div ng-controller="addTestController">
+        <form>
+
+            Input Variables:
+            <div ng-repeat="(key, value) in inputVariables">
+                {{ key }} : {{ value }} <a href="#" ng-click="removeInputVariable(key)">remove input variable</a>
+            </div>
+            <input type="input" ng-model="inputVariableKey" />
+            <input type="input" ng-model="inputVariableValue" />
+            <a href="#" ng-click="addInputVariable(inputVariableKey, inputVariableValue)">add input variable</a>
+
+
+            <br />
+            Test Name:
+            <input type="text" ng-model="testName" /> <br />
+
+            <select ng-model="selectedHttpMethod"
+                    ng-options="opt as opt.label for opt in httpMethods">
+            </select>
+
+            <input type="text" ng-model="url" size="50" />
+
+            <br />
+            Headers:<br />
+            <div ng-repeat="header in headers">
+                {{ header.key }} : {{ header.value}} <a href="#" ng-click="removeHeader($index)">remove</a><br />
+            </div>
+
+            <input type="input" ng-model="headerKey" />
+            <input type="input" ng-model="headerValue" />
+            <a href="#" ng-click="addHeader(headerKey, headerValue)">add header</a>
+
+            <br />
+            Body:<br />
+            <textarea rows="4" cols="50" ng-model="body"></textarea> <br />
+            <input type="button" ng-click="submitTest()" value="Submit"/>
+
+            <br />
+            Assertions:<br />
+            Response Code Assertion: <br />
+            Expected Response Code: <input type="text" size="5" />
+        </form>
+    </div>
+
+    <script>
+        var app = angular.module("testApp", []);
+
+        app.service('sharedTestService', function($http) {
+
+            var data = {
+                tests: []
+            };
+
+            return {
+                getTests: function() {
+                    return data.tests;
+                },
+                setTests: function(tests) {
+                    data.tests = tests;
+                }
+            };
+
+            /*this.getTests = function(callback) {
+                var tests = [];
+                alert('in getTests');
+                $http.get('/test').success(function(data) {
+                    callback(data);
+                });
+            }*/
+        });
+
+        app.controller("getTestController", function($scope, $http, sharedTestService) {
+
+            $scope.tests = [];
+
+            $scope.init = function() {
+                $http.get('/test').success(function(data) {
+                    sharedTestService.setTests(data);
+                });
+            };
+
+            $scope.$watch(function() { return sharedTestService.getTests(); }, function(data) {
+                $scope.tests = data;
+            });
+
+            $scope.removeTest = function(testId) {
+                alert('deleting ' + testId);
+                $http.delete('/test/' + testId).success(function() {
+                    $http.get('/test').success(function(data) {
+                        sharedTestService.setTests(data);
+                    });
+                });
+            }
+
+            $scope.init();
+
+        });
+
+        app.controller("addTestController", function($scope, $http, sharedTestService) {
+            $scope.httpMethods = [
+                {label: 'GET', value: 'GET'},
+                {label: 'POST', value: 'POST'},
+                {label: 'PUT', value: 'PUT'},
+                {label: 'DELETE', value: 'DELETE'},
+            ];
+
+            $scope.selectedHttpMethod = $scope.httpMethods[0];
+
+            $scope.testName='test name';
+            $scope.url='http://www.google.com/search?q=test';
+            $scope.body = '';
+
+            $scope.inputVariables = {
+                test: 'test123',
+                test2: 'test123'
+            }
+
+            $scope.headers = [
+                {
+                    key: 'Content-Type',
+                    value: 'application/json'
+                }
+            ];
+
+            $scope.addInputVariable = function(key, value) {
+                $scope.inputVariables[key] = value;
+            }
+
+            $scope.removeInputVariable = function(key) {
+                delete $scope.inputVariables[key];
+            }
+
+            $scope.addHeader = function(key, value) {
+                $scope.headers.push({'key': key, 'value': value});
+            }
+
+            $scope.removeHeader = function($index) {
+                $scope.headers.splice($index, 1);
+            }
+
+            $scope.submitTest = function() {
+
+                var headers = {};
+
+                angular.forEach($scope.headers, function(header) {
+                    headers[header.key] = header.value;
+                });
+
+                // should follow schema model
+                var postData = {
+                    testName: $scope.testName,
+                    url: $scope.url,
+                    httpMethod: $scope.selectedHttpMethod.value,
+                    headers: headers,
+                    body: $scope.body,
+                    variables: {
+                        input: $scope.inputVariables
+                    }
+                };
+
+                var request = {
+                    url: 'http://localhost:1337/test',
+                    method: 'POST',
+                    data: postData
+                };
+
+                $http(request)
+                        .success(function() {
+                            $http.get('/test').success(function(data) {
+                                sharedTestService.setTests(data);
+                            });
+                        })
+                        .error(function() { alert('bad')});
+            }
+        });
+
+    </script>
+</body>
+
+</html>

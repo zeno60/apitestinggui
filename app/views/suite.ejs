@@ -1,0 +1,83 @@
+<html ng-app="testApp">
+<head>
+    <title><%= title %></title>
+    <script src="/js/angular/angular.js"></script>
+    <script src="/js/checklist-model/checklist-model.js"></script>
+</head>
+
+<body>
+    <a href="/testview">go to testview</a>
+
+    <div ng-controller='getTestSuiteController'>
+
+        Test Suites:<br />
+        <div ng-repeat="testSuite in testSuites">
+            {{ testSuite._id }}
+        </div>
+
+        Tests:<br />
+        <div ng-repeat="test in tests">
+            <input type="checkbox" checklist-model="testSelection" checklist-value="test._id"> {{ test._id }}
+        </div>
+        {{ testSelection }}
+
+        <br />
+
+        Global Variables:<br />
+        <div ng-repeat="variable in globalVariables">
+            {{ variable.key }} : {{ variable.value}} <a href="#" ng-click="removeGlobalVariable($index)">remove</a><br />
+        </div>
+
+        <input type="input" ng-model="globalVariableKey" />
+        <input type="input" ng-model="globalVariableValue" />
+        <a href="#" ng-click="addGlobalVariable(globalVariableKey, globalVariableValue)">add global variable</a>
+
+        <input type="button" ng-click="submitSuite()" value="Button" />
+    </div>
+
+    <script>
+        var app = angular.module("testApp", ["checklist-model"]);
+
+        app.controller("getTestSuiteController", function($scope, $http) {
+
+            $scope.tests = [];
+            $scope.testSelection = [];
+            $scope.testSuites = [];
+
+            $scope.globalVariables = [];
+
+            $scope.globalVariableKey = '';
+            $scope.globalVariableValue = '';
+
+            $scope.addGlobalVariable = function(key, value) {
+                $scope.globalVariables.push({'key': key, 'value': value});
+            }
+
+            $scope.removeGlobalVariable = function($index) {
+                $scope.globalVariables.splice($index, 1);
+            }
+
+            $scope.init = function() {
+                $http.get('/suite').success(function(data) {
+                    $scope.testSuites = data;
+                });
+
+                $http.get('/test').success(function(data) {
+                    $scope.tests = data;
+                });
+            };
+
+            $scope.submitSuite = function() {
+                $http.post('http://localhost:1337/suite', { tests: $scope.testSelection}).success(function() {
+                    alert('saved');
+                });
+            };
+
+            $scope.init();
+
+        });
+
+    </script>
+</body>
+
+</html>
