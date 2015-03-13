@@ -15,12 +15,6 @@
             {{ testSuite._id }}
         </div>
 
-        Tests:<br />
-        <div ng-repeat="test in tests">
-            <input type="checkbox" checklist-model="testSelection" checklist-value="test._id"> {{ test._id }}
-        </div>
-        {{ testSelection }}
-
         <br />
 
         Global Variables:<br />
@@ -32,13 +26,20 @@
         <input type="input" ng-model="globalVariableValue" />
         <a href="#" ng-click="addGlobalVariable(globalVariableKey, globalVariableValue)">add global variable</a>
 
-        <input type="button" ng-click="submitSuite()" value="Button" />
+        <br />
+        Tests:<br />
+        <div ng-repeat="test in tests">
+            <input type="checkbox" checklist-model="testSelection" checklist-value="test._id"> {{ test._id }}
+        </div>
+
+        <br />
+        <input type="button" ng-click="submitSuite()" value="save suite" />
     </div>
 
     <script>
         var app = angular.module("testApp", ["checklist-model"]);
 
-        app.controller("getTestSuiteController", function($scope, $http) {
+        app.controller("getTestSuiteController", function($scope, $http, $window) {
 
             $scope.tests = [];
             $scope.testSelection = [];
@@ -58,7 +59,7 @@
             }
 
             $scope.init = function() {
-                $http.get('/suite').success(function(data) {
+                $http.get('/suite?responseFormat=json').success(function(data) {
                     $scope.testSuites = data;
                 });
 
@@ -68,8 +69,8 @@
             };
 
             $scope.submitSuite = function() {
-                $http.post('http://localhost:1337/suite', { tests: $scope.testSelection}).success(function() {
-                    alert('saved');
+                $http.post('http://localhost:1337/suite', { tests: $scope.testSelection}).success(function(data) {
+                    $window.location.href = '/suite/' + data._id;
                 });
             };
 

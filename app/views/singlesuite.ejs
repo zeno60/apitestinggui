@@ -1,0 +1,36 @@
+<html ng-app="testApp">
+<head>
+    <title><%= title %></title>
+    <script src="/js/angular/angular.js"></script>
+</head>
+
+<body>
+<div ng-controller="getTestSuiteController">
+    <div ng-repeat="test in testSuite.tests">
+        {{ test }} <br />
+    </div>
+</div>
+
+<script>
+    var app = angular.module("testApp", []);
+
+    app.controller("getTestSuiteController", function($scope, $http) {
+        $scope.testSuite = {};
+        $scope.testSuiteTests = [];
+
+        // dont automatically get tests within a test suite,
+        // list them out and make them clickable (lazy load)
+
+        $scope.init = function() {
+            $http.get('/suite/' + '<%= suiteId%>' + '?responseFormat=json').success(function(data) {
+                $scope.testSuite = data;
+            });
+        }
+
+        $scope.init();
+    });
+
+</script>
+
+</body>
+</html>

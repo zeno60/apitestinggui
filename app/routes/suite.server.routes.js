@@ -1,11 +1,12 @@
 module.exports = function(app) {
     var suite = require('../controllers/suite.server.controller');
 
-    app.route('/suiteview')
-        .get(suite.renderSuiteList);
-
     app.route('/suite')
-        .get(suite.getSuiteList);
+        .get(suite.renderSuiteList)
+        .post(suite.create);
+
+    app.route('/suite/:suiteId')
+        .get(suite.renderSuite);
 
     /*
     app.route('/test')

@@ -54,9 +54,23 @@
             <input type="button" ng-click="submitTest()" value="Submit"/>
 
             <br />
-            Assertions:<br />
-            Response Code Assertion: <br />
-            Expected Response Code: <input type="text" size="5" />
+            <div ng-repeat="assertion in assertions">
+                <div ng-switch="assertion.type">
+                    <div ng-switch-when="responseCode">
+                        expected response code: <input type="text" size="5" ng-model="assertion.expectedResponseCode" /><br />
+                    </div>
+                    <div ng-switch-when="responseBody">
+                        parameter: <input type="text" ng-model="assertion.responseBodyParameter" /><br />
+                        expected value: <input type="text" ng-model="assertion.expectedValue" />
+                    </div>
+                    <div ng-switch-default>
+                        default!
+                    </div>
+                    <a href="#" ng-click="removeAssertion($index)">remove assertion</a><br />
+                </div>
+            </div>
+            <a href="#" ng-click="addResponseCodeAssertion()">add response code assertion</a><br />
+            <a href="#" ng-click="addResponseBodyAssertion()">add response body assertion</a>
         </form>
     </div>
 
@@ -131,6 +145,27 @@
             $scope.inputVariables = {
                 test: 'test123',
                 test2: 'test123'
+            };
+
+            $scope.assertions = [];
+
+            $scope.removeAssertion = function($index) {
+                $scope.assertions.splice($index, 1);
+            }
+
+            $scope.addResponseCodeAssertion = function() {
+                $scope.assertions.push({
+                    type: 'responseCode',
+                    expectedResponseCode: 200
+                });
+            }
+
+            $scope.addResponseBodyAssertion = function() {
+                $scope.assertions.push({
+                    type: 'responseBody',
+                    responseBodyParameter: 'parameter',
+                    expectedValue: 'expected'
+                });
             }
 
             $scope.headers = [
@@ -173,7 +208,8 @@
                     body: $scope.body,
                     variables: {
                         input: $scope.inputVariables
-                    }
+                    },
+                    assertions: $scope.assertions
                 };
 
                 var request = {
