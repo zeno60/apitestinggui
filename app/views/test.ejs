@@ -6,13 +6,13 @@
 
 <body>
 
-    <a href="/suiteview">go to suiteview</a>
+    <a href="/suite">go to suite view</a>
 
     <div ng-controller="getTestController">
 
         Tests:<br />
         <div ng-repeat="test in tests">
-            {{ test._id }} named {{ test.testName }} <a href="#" ng-click="removeTest(test._id)">remove</a>
+            <a href="/test/{{test._id}}">{{test.testName}}</a> <a href="#" ng-click="removeTest(test._id)">remove</a>
         </div>
     </div>
     <hr />
@@ -106,7 +106,7 @@
             $scope.tests = [];
 
             $scope.init = function() {
-                $http.get('/test').success(function(data) {
+                $http.get('/test?responseFormat=json').success(function(data) {
                     sharedTestService.setTests(data);
                 });
             };
@@ -116,13 +116,12 @@
             });
 
             $scope.removeTest = function(testId) {
-                alert('deleting ' + testId);
                 $http.delete('/test/' + testId).success(function() {
-                    $http.get('/test').success(function(data) {
+                    $http.get('/test?responseFormat=json').success(function(data) {
                         sharedTestService.setTests(data);
                     });
                 });
-            }
+            };
 
             $scope.init();
 
@@ -220,7 +219,7 @@
 
                 $http(request)
                         .success(function() {
-                            $http.get('/test').success(function(data) {
+                            $http.get('/test?responseFormat=json').success(function(data) {
                                 sharedTestService.setTests(data);
                             });
                         })

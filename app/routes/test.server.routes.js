@@ -1,14 +1,12 @@
 module.exports = function(app) {
     var test = require('../controllers/test.server.controller');
 
-    app.route('/testview')
-        .get(test.renderTestList);
-
     app.route('/test')
-        .get(test.getTestList)
+        .get(test.renderTestList)
         .post(test.create);
 
     app.route('/test/:testId')
+        .get(test.getTestById)
         .delete(test.remove);
 
     /*

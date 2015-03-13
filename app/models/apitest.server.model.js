@@ -10,12 +10,21 @@ var APITestSchema = new Schema({
         input: {},
         output: {}
     },
+    body: {},
     assertions: Array
 });
 
 var APITestSuiteSchema = new Schema({
     suiteName: String,
-    tests: [Schema.Types.ObjectId]
+    variables: {
+        global: {}
+    },
+    tests: [
+        {
+            _id: Schema.Types.ObjectId,
+            testName: String
+        }
+    ]
 });
 
 mongoose.model('APITest', APITestSchema);

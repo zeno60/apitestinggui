@@ -6,17 +6,85 @@
 
 <body>
 <div ng-controller="getTestSuiteController">
-    <div ng-repeat="test in testSuite.tests">
-        {{ test }} <br />
+    testSuite: {{ testSuite }} <br />
+
+    Global Variables:<br />
+    <div ng-repeat="(key, value) in testSuite.variables.global">
+        {{ key }} : {{ value }}
     </div>
+
+    Tests:<br />
+    <div ng-repeat="test in testSuite.tests">
+        {{ test.testName }} <br />
+    </div>
+
+    Actions:<br />
+    <input type="button" value="run this suite" ng-click="runTestSuite()"/>
+
+    <br />
+    {{ response }}
+
 </div>
 
 <script>
+    var resolveInputVariables = function(field, variables) {
+        var returnField = field;
+        angular.forEach(variables, function (value, key) {
+            var keyField = '\{' + key + '\}';
+            returnField = returnField.replace(new RegExp(keyField, 'g'), value);
+        });
+        return returnField;
+    };
+
+
     var app = angular.module("testApp", []);
 
     app.controller("getTestSuiteController", function($scope, $http) {
         $scope.testSuite = {};
-        $scope.testSuiteTests = [];
+
+        $scope.response = {};
+
+        var assertResponse = function(data, status, headers, config) {
+            alert('assert');
+            $scope.response = status;
+        }
+
+        $scope.runTestSuite = function() {
+
+            angular.forEach($scope.testSuite.tests, function(test) {
+                var url = resolveInputVariables(test.url, test.variables.input);
+                url = resolveInputVariables(url, $scope.testSuite.variables.global);
+
+                var headers = {};
+
+                angular.forEach(test.headers, function(value, key) {
+                    var headerValue = resolveInputVariables(value, test.variables.input);
+                    headerValue = resolveInputVariables(headerValue, $scope.testSuite.variables.global);
+
+                    headers[key] = headerValue;
+                });
+
+                var request = {
+                    url: url,
+                    method: test.httpMethod,
+                    data: test.body,
+                    headers: headers
+                };
+
+                $http(request).success(assertResponse).error(assertResponse);
+            });
+
+
+
+            /*var url = resolveInputVariables(testInput.url, testInput.variables.input);
+            var headers = {};
+            angular.forEach(testInput.headers, function(value, key) {
+                var headerValue = resolveInputVariables(value, testInput.variables.input);
+                headers[key] = headerValue;
+            });
+
+            var test = $http.get('http://localhost:1337/test');*/
+        };
 
         // dont automatically get tests within a test suite,
         // list them out and make them clickable (lazy load)
@@ -24,8 +92,14 @@
         $scope.init = function() {
             $http.get('/suite/' + '<%= suiteId%>' + '?responseFormat=json').success(function(data) {
                 $scope.testSuite = data;
+
+                angular.forEach($scope.testSuite.tests, function(test) {
+                    $http.get('/test/' + test._id).success(function(data) {
+                        angular.extend(test, data);
+                    });
+                });
             });
-        }
+        };
 
         $scope.init();
     });

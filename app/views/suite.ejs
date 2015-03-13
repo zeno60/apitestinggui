@@ -1,22 +1,26 @@
 <html ng-app="testApp">
 <head>
     <title><%= title %></title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js"></script>
     <script src="/js/angular/angular.js"></script>
     <script src="/js/checklist-model/checklist-model.js"></script>
+    <script src="/js/angular-dragdrop/src/angular-dragdrop.min.js"></script>
 </head>
 
 <body>
-    <a href="/testview">go to testview</a>
+    <a href="/test">go to test view</a>
 
     <div ng-controller='getTestSuiteController'>
 
         Test Suites:<br />
         <div ng-repeat="testSuite in testSuites">
-            {{ testSuite._id }}
+            <a href="/suite/{{testSuite._id}}">{{testSuite._id}}</a>
         </div>
 
-        <br />
+    </div>
 
+    <div ng-controller="dragController">
         Global Variables:<br />
         <div ng-repeat="variable in globalVariables">
             {{ variable.key }} : {{ variable.value}} <a href="#" ng-click="removeGlobalVariable($index)">remove</a><br />
@@ -25,30 +29,47 @@
         <input type="input" ng-model="globalVariableKey" />
         <input type="input" ng-model="globalVariableValue" />
         <a href="#" ng-click="addGlobalVariable(globalVariableKey, globalVariableValue)">add global variable</a>
-
         <br />
-        Tests:<br />
-        <div ng-repeat="test in tests">
-            <input type="checkbox" checklist-model="testSelection" checklist-value="test._id"> {{ test._id }}
+
+        <div ng-repeat="test in availableTests" ng-model="availableTests" data-drag="true" jqyoui-draggable="{index: {{$index}}, animate: true, placeholder: 'keep'}">
+            {{ test.testName }}
         </div>
 
         <br />
-        <input type="button" ng-click="submitSuite()" value="save suite" />
+        Selected Tests:
+        <div ng-repeat="test in selectedTests">
+            {{ test.testName}} <br />
+        </div>
+
+        <div data-drop="true" data-jqyoui-options ng-model="selectedTests" jqyoui-droppable style='height:50px; border-style: solid;'>
+            drag test here
+        </div>
+
+        {{ selectedTests }}
+
+        <input type="button" ng-click="submitSuite()" value="submit" />
     </div>
 
     <script>
-        var app = angular.module("testApp", ["checklist-model"]);
+        var app = angular.module("testApp", ["checklist-model", "ngDragDrop"]);
 
-        app.controller("getTestSuiteController", function($scope, $http, $window) {
+        app.controller("dragController", function($scope, $http, $window) {
 
-            $scope.tests = [];
-            $scope.testSelection = [];
-            $scope.testSuites = [];
+            $scope.init = function() {
+                $http.get('/test?responseFormat=json').success(function(data) {
+                    angular.forEach(data, function(test) {
+                        $scope.availableTests.push({
+                            _id: test._id,
+                            testName: test.testName
+                        });
+                    });
+                });
+            };
+
+            $scope.availableTests = [];
+            $scope.selectedTests = [];
 
             $scope.globalVariables = [];
-
-            $scope.globalVariableKey = '';
-            $scope.globalVariableValue = '';
 
             $scope.addGlobalVariable = function(key, value) {
                 $scope.globalVariables.push({'key': key, 'value': value});
@@ -58,19 +79,36 @@
                 $scope.globalVariables.splice($index, 1);
             }
 
-            $scope.init = function() {
-                $http.get('/suite?responseFormat=json').success(function(data) {
-                    $scope.testSuites = data;
+            $scope.submitSuite = function() {
+                var globalVariables = {};
+
+                angular.forEach($scope.globalVariables, function(globalVariable) {
+                    globalVariables[globalVariable.key] = globalVariable.value;
                 });
 
-                $http.get('/test').success(function(data) {
-                    $scope.tests = data;
+                var postData = {
+                    variables: {
+                        global: globalVariables
+                    },
+                    tests: $scope.selectedTests
+                }
+
+                $http.post('http://localhost:1337/suite', postData).success(function(data) {
+                    //$window.location.href = '/suite/' + data._id;
+                    alert('good');
                 });
             };
 
-            $scope.submitSuite = function() {
-                $http.post('http://localhost:1337/suite', { tests: $scope.testSelection}).success(function(data) {
-                    $window.location.href = '/suite/' + data._id;
+            $scope.init();
+        });
+
+        app.controller("getTestSuiteController", function($scope, $http, $window) {
+
+            $scope.testSuites = [];
+
+            $scope.init = function() {
+                $http.get('/suite?responseFormat=json').success(function(data) {
+                    $scope.testSuites = data;
                 });
             };
 
