@@ -1,30 +1,113 @@
 <html ng-app="testApp">
 <head>
     <title><%= title %></title>
+
+    <style>
+        html,
+        body {
+            margin:0;
+            padding:0;
+            color:#000;
+            font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial", sans-serif;
+            font-size: 10pt;
+            background: #B5B9C8;
+        }
+        #body {
+            width: 100%;
+            margin:0 auto;
+            background:#8990A9;
+        }
+        #header {
+            padding:10px;
+            background: #626C90;
+            height: 40px;
+        }
+        #mainLeft {
+            float:left;
+            width:20%;
+            padding:0px;
+            background: #DEDFE5;
+        }
+        #mainWrapper {
+            float:right;
+            width:80%;
+        }
+        #mainWrapperLeft {
+            float:left;
+            width:75%;
+            padding:0px;
+            background:#DEDFE5;
+        }
+        #mainWrapperRight {
+            float:right;
+            width:25%;
+            padding:0px;
+            background: #DEDFE5;
+        }
+        #footer {
+            clear:both;
+            padding:10px;
+            background: #626C90;
+            height: 40px;
+        }
+
+        #testContainer {
+            padding:10px;
+            margin-bottom: 2px;
+        }
+
+    </style>
+
     <script src="/js/angular/angular.js"></script>
 </head>
 
 <body>
-<div ng-controller="getTestSuiteController">
-    testSuite: {{ testSuite }} <br />
 
-    Global Variables:<br />
-    <div ng-repeat="(key, value) in testSuite.variables.global">
-        {{ key }} : {{ value }}
+    <div id="body">
+        <div id="header">header</div>
+        <div id="main">
+            <div id="mainLeft">
+                mainLeft
+            </div>
+            <div id="mainWrapper">
+                <div id="mainWrapperLeft">
+                    <div ng-controller="getTestSuiteController">
+                        Global Variables:<br />
+                        <div ng-repeat="(key, value) in testSuite.variables.global">
+                            {{ key }} : {{ value }}
+                        </div>
+
+                        Tests:<br />
+                        <div id="testContainer" ng-repeat="test in testSuite.tests">
+                            Name: {{ test.testName }} <br />
+                            Status: {{ test.testStatus }} <br />
+                            Assertions: <br />
+                            <div ng-repeat="assertion in test.assertions">
+                                <div ng-switch on="assertion.type">
+                                    <div ng-switch-when="responseCode">
+                                        Response Code should equal {{ assertion.expectedResponseCode }} <br />
+                                        Status: {{ assertion.status }} <br />
+                                    </div>
+                                    <div ng-switch-when="responseBody">
+                                        Response parameter {{ assertion.responseBodyParameter }} should equal {{ assertion.expectedValue }} <br />
+                                        Status: {{ assertion.status }} <br />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <input type="button" value="run this suite" ng-click="runTestSuite()"/>
+
+                        <br />
+                    </div>
+                </div>
+                <div id="mainWrapperRight">
+                   mainWrapperRight
+                </div>
+            </div>
+        </div>
+        <div id="footer">footer</div>
     </div>
-
-    Tests:<br />
-    <div ng-repeat="test in testSuite.tests">
-        {{ test.testName }} <br />
-    </div>
-
-    Actions:<br />
-    <input type="button" value="run this suite" ng-click="runTestSuite()"/>
-
-    <br />
-    {{ response }}
-
-</div>
 
 <script>
     var resolveInputVariables = function(field, variables) {
@@ -44,21 +127,138 @@
 
         $scope.response = {};
 
-        var assertResponse = function(data, status, headers, config) {
-            alert('assert');
-            $scope.response = status;
-        }
-
         $scope.runTestSuite = function() {
 
-            angular.forEach($scope.testSuite.tests, function(test) {
-                var url = resolveInputVariables(test.url, test.variables.input);
-                url = resolveInputVariables(url, $scope.testSuite.variables.global);
+            // store output variables between tests
+            var testOutputVariables = {};
+            var maxTests = $scope.testSuite.tests.length;
+            var testCount = 0;
+
+            var executeTest = function(test) {
+                testCount++;
+
+                var url = test.url;
+
+                if(!(test.variables === undefined) && !(test.variables.input === undefined)) {
+                    url = resolveInputVariables(test.url, test.variables.input);
+                }
+
+                if(!($scope.testSuite.variables === undefined) && !($scope.testSuite.variables.global === undefined)) {
+                    url = resolveInputVariables(url, $scope.testSuite.variables.global);
+                }
+
+                url = resolveInputVariables(url, testOutputVariables);
+
+                var headers = {};
+                angular.forEach(test.headers, function(value, key) {
+                    var headerValue = value;
+
+                    if(!(test.variables === undefined) && !(test.variables.input === undefined)) {
+                        headerValue = resolveInputVariables(headerValue, test.variables.input);
+                    }
+
+                    if(!($scope.testSuite.variables === undefined) && !($scope.testSuite.variables.global === undefined)) {
+                        headerValue = resolveInputVariables(headerValue, $scope.testSuite.variables.global);
+                    }
+
+                    headers[key] = headerValue;
+                });
+
+                var request = {
+                    url: url,
+                    method: test.httpMethod,
+                    data: test.body,
+                    headers: headers
+                };
+
+                var assertResponse = function(data, status, headers, config) {
+
+                    if(!(test.variables === undefined)) {
+                        angular.forEach(test.variables.output, function (value, key) {
+
+                            var tempData = data;
+                            var split = value.split('.');
+                            for (var i = 0; i < split.length; i++) {
+                                tempData = tempData[split[i]];
+                            }
+
+                            testOutputVariables[key] = tempData;
+                        });
+                    }
+
+                    var testFailed = false;
+
+                    for(var i = 0; i < test.assertions.length; i++) {
+                        var assertion = test.assertions[i];
+                        var assertionFailed = false;
+
+                        assertion.status = "running";
+
+                        if(assertion.type == 'responseCode') {
+                            if(assertion.expectedResponseCode != status) {
+                                assertionFailed = true;
+                                assertion.error = "expected response code did not match";
+                            }
+                        }
+                        else if(assertion.type == 'responseBody') {
+                            if(data[assertion.responseBodyParameter] != assertion.expectedValue) {
+                                assertionFailed = true;
+                                assertion.error = "response body parameter did not match";
+                            }
+                        }
+
+                        if(assertionFailed) {
+                            testFailed = true;
+                            assertion.status = "failed";
+                        }
+                        else {
+                            assertion.status = "passed";
+                        }
+                    }
+
+                    if(testFailed) {
+                        test.testStatus = "failed";
+                    }
+                    else {
+                        test.testStatus = "passed";
+                    }
+
+                    if(testCount < maxTests) {
+                        executeTest($scope.testSuite.tests[testCount]);
+                    }
+                }
+
+                $http(request).success(assertResponse).error(assertResponse);
+            }
+
+            if(testCount < maxTests) {
+                executeTest($scope.testSuite.tests[testCount]);
+            }
+
+            //for(var testCount = 0; testCount < maxTests; testCount++) {
+                /*
+                var test = $scope.testSuite.tests[i];
+                test.testStatus = "running";
+                var url = test.url;
+
+                if(!(test.variables === undefined) && !(test.variables.input === undefined)) {
+                    url = resolveInputVariables(test.url, test.variables.input);
+                }
+
+                if(!($scope.testSuite.variables.global === undefined)) {
+                    url = resolveInputVariables(url, $scope.testSuite.variables.global);
+                }
+
+                url = resolveInputVariables(url, testOutputVariables);
 
                 var headers = {};
 
                 angular.forEach(test.headers, function(value, key) {
-                    var headerValue = resolveInputVariables(value, test.variables.input);
+                    var headerValue = value;
+                    if(!(test.variables === undefined) && !(test.variables.input === undefined)) {
+                        headerValue = resolveInputVariables(headerValue, test.variables.input);
+                    }
+
                     headerValue = resolveInputVariables(headerValue, $scope.testSuite.variables.global);
 
                     headers[key] = headerValue;
@@ -71,8 +271,61 @@
                     headers: headers
                 };
 
+                var assertResponse = function(data, status, headers, config) {
+
+                    angular.forEach(test.variables.output, function(value, key) {
+
+                        var tempData = data;
+                        var split = value.split('.');
+                        for(var i = 0; i < split.length; i++){
+                            tempData = tempData[split[i]];
+                        }
+
+                        testOutputVariables[key] = tempData;
+                        alert(testOutputVariables[key]);
+                    });
+
+                    var testFailed = false;
+
+                    for(var i = 0; i < test.assertions.length; i++) {
+                        var assertion = test.assertions[i];
+                        var assertionFailed = false;
+
+                        assertion.status = "running";
+
+                        if(assertion.type == 'responseCode') {
+                            if(assertion.expectedResponseCode != status) {
+                                assertionFailed = true;
+                                assertion.error = "expected response code did not match";
+                            }
+                        }
+                        else if(assertion.type == 'responseBody') {
+                            if(data[assertion.responseBodyParameter] != assertion.expectedValue) {
+                                assertionFailed = true;
+                                assertion.error = "response body parameter did not match";
+                            }
+                        }
+
+                        if(assertionFailed) {
+                            testFailed = true;
+                            assertion.status = "failed";
+                        }
+                        else {
+                            assertion.status = "passed";
+                        }
+                    }
+
+                    if(testFailed) {
+                        test.testStatus = "failed";
+                    }
+                    else {
+                        test.testStatus = "passed";
+                    }
+                }
+
                 $http(request).success(assertResponse).error(assertResponse);
-            });
+                */
+            //}
 
 
 

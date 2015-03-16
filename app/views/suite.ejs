@@ -1,6 +1,70 @@
 <html ng-app="testApp">
 <head>
     <title><%= title %></title>
+
+    <style>
+        html,
+        body {
+            margin:0;
+            padding:0;
+            color:#000;
+            font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial", sans-serif;
+            font-size: 10pt;
+            background: #B5B9C8;
+        }
+        #body {
+            width: 100%;
+            margin:0 auto;
+            background:#8990A9;
+        }
+        #header {
+            padding:10px;
+            background: #626C90;
+            height: 40px;
+        }
+        #mainLeft {
+            float:left;
+            width:20%;
+            padding:0px;
+            background: #DEDFE5;
+        }
+        #mainWrapper {
+            float:right;
+            width:80%;
+        }
+        #mainWrapperLeft {
+            float:left;
+            width:75%;
+            padding:0px;
+            background:#DEDFE5;
+        }
+        #mainWrapperRight {
+            float:right;
+            width:25%;
+            padding:0px;
+            background: #DEDFE5;
+        }
+        #footer {
+            clear:both;
+            padding:10px;
+            background: #626C90;
+            height: 40px;
+        }
+
+        #selectedTest {
+            border-style: solid;
+            padding: 10px;
+            margin-bottom: 2px;
+        }
+
+        #selectedTestDragArea {
+            border-style: solid;
+            background: #F8F9FA;
+            padding: 10px;
+        }
+
+    </style>
+
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js"></script>
     <script src="/js/angular/angular.js"></script>
@@ -9,51 +73,107 @@
 </head>
 
 <body>
-    <a href="/test">go to test view</a>
 
-    <div ng-controller='getTestSuiteController'>
+    <div id="body">
+        <div id="header">header</div>
+        <div id="main">
+            <div id="mainLeft">
+                <div ng-controller="availableTestsController">
+                    Available Tests:
+                    <div ng-repeat="test in availableTests" ng-model="availableTests" data-drag="true" jqyoui-draggable="{index: {{$index}}, animate: true, placeholder: 'keep'}">
+                        {{ test.testName }}
+                    </div>
 
-        Test Suites:<br />
-        <div ng-repeat="testSuite in testSuites">
-            <a href="/suite/{{testSuite._id}}">{{testSuite._id}}</a>
+                    <a href="/test">go to test view</a>
+                </div>
+            </div>
+            <div id="mainWrapper">
+                <div id="mainWrapperLeft">
+                    <div ng-controller="dragController">
+                        Global Variables:<br />
+                        <div ng-repeat="variable in globalVariables">
+                            {{ variable.key }} : {{ variable.value}} <a href="#" ng-click="removeGlobalVariable($index)">remove</a><br />
+                        </div>
+
+                        <input type="input" ng-model="globalVariableKey" />
+                        <input type="input" ng-model="globalVariableValue" />
+                        <a href="#" ng-click="addGlobalVariable(globalVariableKey, globalVariableValue)">add global variable</a>
+                        <br />
+
+                        <br />
+                        Selected Tests:
+                        <div ng-repeat="test in selectedTests" id="selectedTest">
+                            {{ test.testName }}
+                        </div>
+
+                        <div id="selectedTestDragArea" data-drop="true" data-jqyoui-options ng-model="selectedTests" jqyoui-droppable>
+                            drag test here
+                        </div>
+
+                        <input type="button" ng-click="submitSuite()" value="submit" />
+                    </div>
+                </div>
+                <div id="mainWrapperRight">
+                    <div ng-controller='getTestSuiteController'>
+
+                        Test Suites:<br />
+                        <div ng-repeat="testSuite in testSuites">
+                            <a href="/suite/{{testSuite._id}}">{{testSuite._id}}</a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
         </div>
-
+        <div id="footer">footer</div>
     </div>
 
-    <div ng-controller="dragController">
-        Global Variables:<br />
-        <div ng-repeat="variable in globalVariables">
-            {{ variable.key }} : {{ variable.value}} <a href="#" ng-click="removeGlobalVariable($index)">remove</a><br />
-        </div>
-
-        <input type="input" ng-model="globalVariableKey" />
-        <input type="input" ng-model="globalVariableValue" />
-        <a href="#" ng-click="addGlobalVariable(globalVariableKey, globalVariableValue)">add global variable</a>
-        <br />
-
-        <div ng-repeat="test in availableTests" ng-model="availableTests" data-drag="true" jqyoui-draggable="{index: {{$index}}, animate: true, placeholder: 'keep'}">
-            {{ test.testName }}
-        </div>
-
-        <br />
-        Selected Tests:
-        <div ng-repeat="test in selectedTests">
-            {{ test.testName}} <br />
-        </div>
-
-        <div data-drop="true" data-jqyoui-options ng-model="selectedTests" jqyoui-droppable style='height:50px; border-style: solid;'>
-            drag test here
-        </div>
-
-        {{ selectedTests }}
-
-        <input type="button" ng-click="submitSuite()" value="submit" />
-    </div>
 
     <script>
         var app = angular.module("testApp", ["checklist-model", "ngDragDrop"]);
 
-        app.controller("dragController", function($scope, $http, $window) {
+        app.factory("TestFactory", function() {
+
+            var tests = {
+                availableTests: [],
+                selectedTests: []
+            };
+
+            return {
+                getAvailableTests: function () {
+                    return tests.availableTests;
+                },
+                setAvailableTests: function (availableTests) {
+                    tests.availableTests = availableTests;
+                },
+                getSelectedTests: function () {
+                    return tests.selectedTests;
+                },
+                setSelectedTests: function (selectedTests) {
+                    tests.selectedTests = selectedTests;
+                }
+            };
+        });
+
+        app.controller("availableTestsController", function($scope, $http, TestFactory) {
+
+            $scope.availableTests = [];
+
+            $scope.init = function() {
+                $http.get('/test?responseFormat=json').success(function(data) {
+                    angular.forEach(data, function(test) {
+                        $scope.availableTests.push({
+                            _id: test._id,
+                            testName: test.testName
+                        });
+                    });
+                });
+            };
+
+            $scope.init();
+        });
+
+        app.controller("dragController", function($scope, $http, $window, TestFactory) {
 
             $scope.init = function() {
                 $http.get('/test?responseFormat=json').success(function(data) {

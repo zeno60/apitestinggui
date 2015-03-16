@@ -57,3 +57,13 @@ exports.getSuiteById = function(req, res, next) {
         res.json(testSuite);
     });
 };
+
+exports.getTestEndpoint = function(req, res, next) {
+    res.json({
+        person: {
+            firstName: 'kevin',
+            lastName: 'jamieson'
+        },
+        field: 'test'
+    })
+}
