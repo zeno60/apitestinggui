@@ -6,7 +6,8 @@ module.exports = function(app) {
         .post(suite.create);
 
     app.route('/suite/:suiteId')
-        .get(suite.renderSuite);
+        .get(suite.renderSuite)
+        .post(suite.executeSuite);
 
     /*
     app.route('/test')

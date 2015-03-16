@@ -96,7 +96,9 @@
                             </div>
                         </div>
 
-                        <input type="button" value="run this suite" ng-click="runTestSuite()"/>
+                        <input type="button" value="run this suite in browser" ng-click="runTestSuite()"/>
+
+                        <input type="button" value="run this suite in backend" ng-click="runTestSuiteBackend()" />
 
                         <br />
                     </div>
@@ -126,6 +128,10 @@
         $scope.testSuite = {};
 
         $scope.response = {};
+
+        $scope.runTestSuiteBackend = function() {
+            $http.post('/suite/' + $scope.testSuite._id);
+        }
 
         $scope.runTestSuite = function() {
 
@@ -164,11 +170,16 @@
                     headers[key] = headerValue;
                 });
 
+
+
                 var request = {
                     url: url,
                     method: test.httpMethod,
                     data: test.body,
-                    headers: headers
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Headers': '*'
+                    }
                 };
 
                 var assertResponse = function(data, status, headers, config) {
@@ -227,6 +238,8 @@
                         executeTest($scope.testSuite.tests[testCount]);
                     }
                 }
+
+                alert(request.method);
 
                 $http(request).success(assertResponse).error(assertResponse);
             }
