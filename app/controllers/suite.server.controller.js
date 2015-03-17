@@ -2,6 +2,7 @@ var mongoose = require('mongoose');
 var APITestSuite = mongoose.model('APITestSuite');
 var APITest = mongoose.model('APITest');
 var http = require('http');
+var httpurl = require('url');
 
 exports.renderSuiteList = function(req, res, next) {
     var responseFormat = req.query.responseFormat;
@@ -77,7 +78,7 @@ var resolveInputVariables = function(field, variables) {
 
     Object.keys(variables).forEach(function(key) {
         var keyField = '\{' + key + '\}';
-        returnField = returnField.replace(new RegExp(keyField, 'g'), value);
+        returnField = returnField.replace(new RegExp(keyField, 'g'), variables[key]);
     });
 
     return returnField;
@@ -86,8 +87,9 @@ var resolveInputVariables = function(field, variables) {
 exports.executeSuite = function(req, res, next) {
     var suiteId = req.params.suiteId;
 
-    APITestSuite.findById(suiteId, function(err, testSuite) {
+    APITestSuite.findById(suiteId, function(err, suite) {
 
+        var testSuite = suite.toObject();
         var testOutputVariables = {};
         var maxTests = testSuite.tests.length;
         var testCount = 0;
@@ -123,27 +125,27 @@ exports.executeSuite = function(req, res, next) {
                 });
             }
 
+            url = httpurl.parse(url);
+
             var request = {
-                hostname: url,
+                hostname: url.hostname,
+                port: url.port,
+                path: url.path,
                 method: test.httpMethod,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Headers': '*'
-                }
+                headers: test.headers
             };
 
-            var assertResponse = function(data, status, headers, config) {
+            var assertResponse = function(data, status, headers) {
 
-                if(test.variables !== undefined) {
+                if(test.variables !== undefined && test.variables.output !== undefined) {
                     Object.keys(test.variables.output).forEach(function (key) {
-
                         var tempData = data;
                         var split = test.variables.output[key].split('.');
                         for (var i = 0; i < split.length; i++) {
                             tempData = tempData[split[i]];
                         }
 
-                        test.variables.output[key] = tempData;
+                        testOutputVariables[key] = tempData;
                     });
                 }
 
@@ -162,7 +164,13 @@ exports.executeSuite = function(req, res, next) {
                         }
                     }
                     else if(assertion.type == 'responseBody') {
-                        if(data[assertion.responseBodyParameter] != assertion.expectedValue) {
+                        var tempData = data;
+                        var split = assertion.responseBodyParameter.split('.');
+                        for (var i = 0; i < split.length; i++) {
+                            tempData = tempData[split[i]];
+                        }
+
+                        if(tempData != assertion.expectedValue) {
                             assertionFailed = true;
                             assertion.error = "response body parameter did not match";
                         }
@@ -184,47 +192,40 @@ exports.executeSuite = function(req, res, next) {
                     test.testStatus = "passed";
                 }
 
+                testSuite.tests[testCount-1] = test;
+
                 if(testCount < maxTests) {
-                    executeTest($scope.testSuite.tests[testCount]);
+                    APITest.findById(testSuite.tests[testCount]._id, function(err, test) {
+                        executeTest(test.toObject());
+                    });
+                }
+                else {
+                    res.json(testSuite);
                 }
             }
 
-            $http(request).success(assertResponse).error(assertResponse);
-
             var httpRequest = http.request(request, function(response) {
-                console.log('request ' + testCount);
+                response.on('data', function(data) {
+
+                    // todo: do some checks here on response header being application/json since we are explicitly using JSON.parse() below
+                    var responseContentType = response.headers['content-type'];
+                    if(responseContentType.indexOf('application/json') != -1) {
+                        assertResponse(JSON.parse(data), response.statusCode, response.headers);
+                    }
+                });
+            });
+
+            httpRequest.on('error', function(error) {
+                console.log(error);
             });
 
             httpRequest.end();
-        }
+        };
 
         if(testCount < maxTests) {
-            executeTest(testSuite.tests[testCount]);
-        }
-
-        /*testSuite.tests.forEach(function (test) {
-            APITest.findById(test._id, function(err, test) {
-                var url = test.url;
-
-
-
-                var request = {
-                    hostname: 'www.google.com',
-                    method: 'GET'
-                };
-
-                var req = http.request(request, function(response) {
-                    console.log('response ' + response.statusCode);
-                });
-
-                req.on('error', function(error) {
-                    console.log('problem: ' + error.message);
-                });
-
-                req.end();
+            APITest.findById(testSuite.tests[testCount]._id, function(err, test) {
+                executeTest(test.toObject());
             });
-        });*/
+        }
     });
-
-    res.send('hello');
 };

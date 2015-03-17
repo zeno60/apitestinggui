@@ -67,7 +67,7 @@
         <div id="header">header</div>
         <div id="main">
             <div id="mainLeft">
-                mainLeft
+                <a href="/suite/"> go to suite view</a>
             </div>
             <div id="mainWrapper">
                 <div id="mainWrapperLeft">
@@ -130,7 +130,9 @@
         $scope.response = {};
 
         $scope.runTestSuiteBackend = function() {
-            $http.post('/suite/' + $scope.testSuite._id);
+            $http.post('/suite/' + $scope.testSuite._id).success(function(data) {
+                $scope.testSuite = data;
+            });
         }
 
         $scope.runTestSuite = function() {
@@ -212,7 +214,14 @@
                             }
                         }
                         else if(assertion.type == 'responseBody') {
-                            if(data[assertion.responseBodyParameter] != assertion.expectedValue) {
+
+                            var tempData = data;
+                            var split = assertion.responseBodyParameter.split('.');
+                            for (var i = 0; i < split.length; i++) {
+                                tempData = tempData[split[i]];
+                            }
+
+                            if(tempData != assertion.expectedValue) {
                                 assertionFailed = true;
                                 assertion.error = "response body parameter did not match";
                             }
@@ -238,8 +247,6 @@
                         executeTest($scope.testSuite.tests[testCount]);
                     }
                 }
-
-                alert(request.method);
 
                 $http(request).success(assertResponse).error(assertResponse);
             }
