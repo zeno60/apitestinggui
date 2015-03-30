@@ -2,68 +2,7 @@
 <head>
     <title><%= title %></title>
 
-    <style>
-        html,
-        body {
-            margin:0;
-            padding:0;
-            color:#000;
-            font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial", sans-serif;
-            font-size: 10pt;
-            background: #B5B9C8;
-        }
-        #body {
-            width: 100%;
-            margin:0 auto;
-            background:#8990A9;
-        }
-        #header {
-            padding:10px;
-            background: #626C90;
-            height: 40px;
-        }
-        #mainLeft {
-            float:left;
-            width:20%;
-            padding:0px;
-            background: #DEDFE5;
-        }
-        #mainWrapper {
-            float:right;
-            width:80%;
-        }
-        #mainWrapperLeft {
-            float:left;
-            width:75%;
-            padding:0px;
-            background:#DEDFE5;
-        }
-        #mainWrapperRight {
-            float:right;
-            width:25%;
-            padding:0px;
-            background: #DEDFE5;
-        }
-        #footer {
-            clear:both;
-            padding:10px;
-            background: #626C90;
-            height: 40px;
-        }
-
-        #selectedTest {
-            border-style: solid;
-            padding: 10px;
-            margin-bottom: 2px;
-        }
-
-        #selectedTestDragArea {
-            border-style: solid;
-            background: #F8F9FA;
-            padding: 10px;
-        }
-
-    </style>
+    <link rel="stylesheet" type="text/css" href="css/main.css">
 
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1/jquery-ui.min.js"></script>
@@ -79,7 +18,9 @@
         <div id="main">
             <div id="mainLeft">
                 <div ng-controller="availableTestsController">
-                    Available Tests:
+                    <div class="label-heading">
+                        Available Tests
+                    </div>
                     <div ng-repeat="test in availableTests" ng-model="availableTests" data-drag="true" jqyoui-draggable="{index: {{$index}}, animate: true, placeholder: 'keep'}">
                         {{ test.testName }}
                     </div>
@@ -91,30 +32,53 @@
                 <div id="mainWrapperLeft">
                     <div ng-controller="dragController">
 
-                        Suite Name:<br />
-                        <input type="text" ng-model="suiteName" size="25" /><br />
+                        <div class="label-heading">
+                            Suite Name
+                        </div>
+                        <input type="text" class="input-1" ng-model="suiteName" /><br />
 
-                        Global Variables:<br />
-                        <div ng-repeat="variable in globalVariables">
-                            {{ variable.key }} : {{ variable.value}} <a href="#" ng-click="removeGlobalVariable($index)">remove</a><br />
+                        <div id="globalVariableForm">
+
+                            <div class="label-heading">
+                                Global Variables
+                            </div>
+
+                            <div ng-repeat="variable in globalVariables">
+                                <div id="globalVariableFormInput">
+                                    <input type="input" class="input" ng-model="globalVariables[$index].key" />
+                                    <input type="input" class="input" ng-model="globalVariables[$index].value" />
+                                </div>
+
+                                <div id="globalVariableFormTrash">
+                                    <a href="#" ng-click="removeGlobalVariable($index)"><img src="img/trash_icon.png" /></a>
+                                </div>
+                            </div>
+
+                            <input type="input" class="input" ng-model="globalVariableKey" />
+                            <input type="input" class="input" ng-model="globalVariableValue" />
+                            <div id="globalVariableSubmit">
+                                <input type="button" class="button-style-1" ng-click="addGlobalVariable(globalVariableKey, globalVariableValue)" value="Add Global Variable" />
+                            </div>
+
+
                         </div>
 
-                        <input type="input" ng-model="globalVariableKey" />
-                        <input type="input" ng-model="globalVariableValue" />
-                        <a href="#" ng-click="addGlobalVariable(globalVariableKey, globalVariableValue)">add global variable</a>
-                        <br />
+                        <div id="selectedTestArea">
+                            <div class="label-heading">
+                                Global Variables
+                            </div>
+                            <div ng-repeat="test in selectedTests track by $index" id="selectedTest">
+                                {{ test.testName }}
+                            </div>
 
-                        <br />
-                        Selected Tests:
-                        <div ng-repeat="test in selectedTests" id="selectedTest">
-                            {{ test.testName }}
+                            <div id="selectedTestDragArea" data-drop="true" data-jqyoui-options ng-model="selectedTests" jqyoui-droppable>
+                                drag test here
+                            </div>
                         </div>
 
-                        <div id="selectedTestDragArea" data-drop="true" data-jqyoui-options ng-model="selectedTests" jqyoui-droppable>
-                            drag test here
+                        <div id="suiteSubmitionArea">
+                            <input class="button-style-1" type="button" ng-click="submitSuite()" value="Save Test Suite" />
                         </div>
-
-                        <input type="button" ng-click="submitSuite()" value="submit" />
                     </div>
                 </div>
                 <div id="mainWrapperRight">

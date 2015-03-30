@@ -1,58 +1,10 @@
 <html ng-app="testApp">
 <head>
     <title><%= title %></title>
+
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+
     <script src="/js/angular/angular.js"></script>
-
-    <style>
-        html,
-        body {
-            margin:0;
-            padding:0;
-            color:#000;
-            font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial", sans-serif;
-            font-size: 10pt;
-            background: #B5B9C8;
-        }
-        #body {
-            width: 100%;
-            margin:0 auto;
-            background:#8990A9;
-        }
-        #header {
-            padding:10px;
-            background: #626C90;
-            height: 40px;
-        }
-        #mainLeft {
-            float:left;
-            width:20%;
-            padding:0px;
-            background: #DEDFE5;
-        }
-        #mainWrapper {
-            float:right;
-            width:80%;
-        }
-        #mainWrapperLeft {
-            float:left;
-            width:75%;
-            padding:0px;
-            background:#DEDFE5;
-        }
-        #mainWrapperRight {
-            float:right;
-            width:25%;
-            padding:0px;
-            background: #DEDFE5;
-        }
-        #footer {
-            clear:both;
-            padding:10px;
-            background: #626C90;
-            height: 40px;
-        }
-
-    </style>
 </head>
 
 <body>
@@ -76,67 +28,118 @@
                     <div ng-controller="addTestController">
                         <form>
 
-                            Input Variables:
-                            <div ng-repeat="(key, value) in inputVariables">
-                                {{ key }} : {{ value }} <a href="#" ng-click="removeInputVariable(key)">remove input variable</a>
+                            <div class="label-heading">
+                                Test Name
                             </div>
-                            <input type="input" ng-model="inputVariableKey" />
-                            <input type="input" ng-model="inputVariableValue" />
-                            <a href="#" ng-click="addInputVariable(inputVariableKey, inputVariableValue)">add input variable</a>
 
-
-                            <br />
-                            Test Name:
-                            <input type="text" ng-model="testName" /> <br />
+                            <input type="text" class="input-1" ng-model="testName" /> <br />
 
                             <select ng-model="selectedHttpMethod"
                                     ng-options="opt as opt.label for opt in httpMethods">
                             </select>
 
-                            <input type="text" ng-model="url" size="50" />
-
+                            <input type="text" class="input-1" ng-model="url" />
                             <br />
-                            Headers:<br />
-                            <div ng-repeat="header in headers">
-                                {{ header.key }} : {{ header.value}} <a href="#" ng-click="removeHeader($index)">remove</a><br />
+
+                            <div id="globalVariableForm">
+
+                                <div class="label-heading">
+                                    Headers
+                                </div>
+
+                                <div ng-repeat="header in headers">
+                                    <div id="globalVariableFormInput">
+                                        <input type="input" class="input" ng-model="header.key" />
+                                        <input type="input" class="input" ng-model="header.value" />
+                                    </div>
+
+                                    <div id="globalVariableFormTrash">
+                                        <a href="#" ng-click="removeHeader($index)"><img src="img/trash_icon.png" /></a>
+                                    </div>
+                                </div>
+
+                                <input type="input" class="input" ng-model="headerKey" />
+                                <input type="input" class="input" ng-model="headerValue" />
+                                <div id="globalVariableSubmit">
+                                    <input type="button" class="button-style-1" ng-click="addHeader(headerKey, headerValue)" value="Add Header" />
+                                </div>
                             </div>
 
-                            <input type="input" ng-model="headerKey" />
-                            <input type="input" ng-model="headerValue" />
-                            <a href="#" ng-click="addHeader(headerKey, headerValue)">add header</a>
-
                             <br />
-                            Body:<br />
-                            <textarea rows="4" cols="50" ng-model="body"></textarea> <br />
-                            <input type="button" ng-click="submitTest()" value="Submit"/> <br />
 
-                            Output Variables:
-                            <div ng-repeat="(key, value) in outputVariables">
-                                {{ key }} : {{ value }} <a href="#" ng-click="removeOutputVariable(key)">remove output variable</a>
+                            <div id="bodyArea" ng-hide="isGetRequest()">
+                                <div class="label-heading">
+                                    Body
+                                </div>
+
+                                <textarea class="input-area" ng-model="body"></textarea> <br />
                             </div>
-                            <input type="input" ng-model="outputVariableKey" />
-                            <input type="input" ng-model="outputVariableValue" />
-                            <a href="#" ng-click="addOutputVariable(outputVariableKey, outputVariableValue)">add output variable</a>
 
+                            <div id="globalVariableForm">
 
-                            <br />
+                                <div class="label-heading">
+                                    Output Variables
+                                </div>
+
+                                <div ng-repeat="variable in outputVariables">
+                                    <div id="globalVariableFormInput">
+                                        <input type="input" class="input" ng-model="variable.key" />
+                                        <input type="input" class="input" ng-model="variable.value" />
+                                    </div>
+
+                                    <div id="globalVariableFormTrash">
+                                        <a href="#" ng-click="removeOutputVariable($index)"><img src="img/trash_icon.png" /></a>
+                                    </div>
+                                </div>
+
+                                <input type="input" class="input" ng-model="outputVariableKey" />
+                                <input type="input" class="input" ng-model="outputVariableValue" />
+                                <div id="globalVariableSubmit">
+                                    <input type="button" class="button-style-1" ng-click="addOutputVariable(outputVariableKey, outputVariableValue)" value="Add Output Variable" />
+                                </div>
+                            </div>
+
                             <div ng-repeat="assertion in assertions">
                                 <div ng-switch="assertion.type">
                                     <div ng-switch-when="responseCode">
-                                        expected response code: <input type="text" size="5" ng-model="assertion.expectedResponseCode" /><br />
+                                        <div style="clear: both;">
+                                            <div class="label-heading">
+                                                Expected Response Code
+                                            </div>
+                                            <div style="float: left;">
+                                                <input type="text" class="input-2" ng-model="assertion.expectedResponseCode" />
+                                            </div>
+                                        </div>
                                     </div>
                                     <div ng-switch-when="responseBody">
-                                        parameter: <input type="text" ng-model="assertion.responseBodyParameter" /><br />
-                                        expected value: <input type="text" ng-model="assertion.expectedValue" />
+
+                                        <div style="clear: both;">
+                                            <div class="label-heading-2" style="float: left;">Parameter</div>
+                                            <div style="float: left;"><input type="text" class="input" ng-model="assertion.responseBodyParameter" /></div>
+                                            <div class="label-heading-2" style="float: left; margin-left: 10px;">Expected Value</div>
+                                            <div style="float: left;"><input type="text" class="input" ng-model="assertion.expectedValue" /></div>
+                                        </div>
                                     </div>
                                     <div ng-switch-default>
                                         default!
                                     </div>
-                                    <a href="#" ng-click="removeAssertion($index)">remove assertion</a><br />
+                                    <div style="float: left; padding-top: 12px">
+                                        <a href="#" ng-click="removeAssertion($index)"><img src="img/trash_icon.png" /></a>
+                                    </div>
                                 </div>
                             </div>
-                            <a href="#" ng-click="addResponseCodeAssertion()">add response code assertion</a><br />
-                            <a href="#" ng-click="addResponseBodyAssertion()">add response body assertion</a>
+
+                            <div style="clear: both;">
+                                <input type="button" class="button-style-1" ng-click="addResponseCodeAssertion()" value="Add Response Code Assertion"/>
+                            </div>
+
+                            <div style="padding-top: 10px;">
+                                <input type="button" class="button-style-1" ng-click="addResponseBodyAssertion()" value="Add Response Body Assertion"/>
+                            </div>
+
+                            <div style="padding-top: 10px;">
+                                <input type="button" class="button-style-1" ng-click="submitTest()" value="Save Test"/>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -211,18 +214,20 @@
 
             $scope.selectedHttpMethod = $scope.httpMethods[0];
 
+            $scope.isGetRequest = function() {
+                if($scope.selectedHttpMethod == $scope.httpMethods[0]) {
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            }
+
             $scope.testName='test name';
             $scope.url='http://www.google.com/search?q=test';
             $scope.body = '';
 
-            $scope.inputVariables = {
-                test: 'test123',
-                test2: 'test123'
-            };
-
-            $scope.outputVariables = {
-                field: 'value'
-            }
+            $scope.outputVariables = [];
 
             $scope.assertions = [];
 
@@ -240,8 +245,8 @@
             $scope.addResponseBodyAssertion = function() {
                 $scope.assertions.push({
                     type: 'responseBody',
-                    responseBodyParameter: 'parameter',
-                    expectedValue: 'expected'
+                    responseBodyParameter: '',
+                    expectedValue: ''
                 });
             }
 
@@ -252,20 +257,12 @@
                 }
             ];
 
-            $scope.addInputVariable = function(key, value) {
-                $scope.inputVariables[key] = value;
-            }
-
-            $scope.removeInputVariable = function(key) {
-                delete $scope.inputVariables[key];
-            }
-
             $scope.addOutputVariable = function(key, value) {
-                $scope.outputVariables[key] = value;
+                $scope.outputVariables.push({'key':key, 'value': value});
             }
 
-            $scope.removeOutputVariable = function(key) {
-                delete $scope.outputVariables[key];
+            $scope.removeOutputVariable = function($index) {
+                $scope.outputVariables.splice($index, 1);
             }
 
             $scope.addHeader = function(key, value) {
@@ -292,7 +289,6 @@
                     headers: headers,
                     body: $scope.body,
                     variables: {
-                        input: $scope.inputVariables,
                         output: $scope.outputVariables
                     },
                     assertions: $scope.assertions

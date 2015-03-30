@@ -2,61 +2,7 @@
 <head>
     <title><%= title %></title>
 
-    <style>
-        html,
-        body {
-            margin:0;
-            padding:0;
-            color:#000;
-            font-family: "Helvetica Neue Light", "Lucida Grande", "Calibri", "Arial", sans-serif;
-            font-size: 10pt;
-            background: #B5B9C8;
-        }
-        #body {
-            width: 100%;
-            margin:0 auto;
-            background:#8990A9;
-        }
-        #header {
-            padding:10px;
-            background: #626C90;
-            height: 40px;
-        }
-        #mainLeft {
-            float:left;
-            width:20%;
-            padding:0px;
-            background: #DEDFE5;
-        }
-        #mainWrapper {
-            float:right;
-            width:80%;
-        }
-        #mainWrapperLeft {
-            float:left;
-            width:75%;
-            padding:0px;
-            background:#DEDFE5;
-        }
-        #mainWrapperRight {
-            float:right;
-            width:25%;
-            padding:0px;
-            background: #DEDFE5;
-        }
-        #footer {
-            clear:both;
-            padding:10px;
-            background: #626C90;
-            height: 40px;
-        }
-
-        #testContainer {
-            padding:10px;
-            margin-bottom: 2px;
-        }
-
-    </style>
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
 
     <script src="/js/angular/angular.js"></script>
 </head>
@@ -72,33 +18,66 @@
             <div id="mainWrapper">
                 <div id="mainWrapperLeft">
                     <div ng-controller="getTestSuiteController">
-                        Global Variables:<br />
-                        <div ng-repeat="(key, value) in testSuite.variables.global">
-                            {{ key }} : {{ value }}
+
+                        <div class="label-heading">
+                            Global Variables
                         </div>
 
-                        Tests:<br />
+                        <div class="label-heading-2" ng-repeat="(key, value) in testSuite.variables.global">
+                            <code ng-non-bindable>{</code>{{ key }}<code ng-non-bindable>}</code> will be replaced with "{{ value }}"
+                        </div>
+
+                        <div class="label-heading">
+                            Tests
+                        </div>
+
                         <div id="testContainer" ng-repeat="test in testSuite.tests">
-                            Name: {{ test.testName }} <br />
-                            Status: {{ test.testStatus }} <br />
-                            Assertions: <br />
+
+                            <div ng-switch on="test.testStatus">
+                                <div ng-switch-when="passed">
+                                    <div style="float: right;">
+                                        <img src="/img/check_mark.png" />
+                                    </div>
+                                </div>
+                                <div ng-switch-when="failed">
+                                    <div style="float: right;">
+                                        <img src="/img/cross_mark.png" />
+                                    </div>
+                                </div>
+                                <div ng-switch-default>
+                                    <!-- not running -->
+                                </div>
+                            </div>
+
+                            <div class="label-heading">
+                                {{ test.testName }}
+                            </div>
+
+                            <div class="label-heading">
+                                Assertions
+                            </div>
+
                             <div ng-repeat="assertion in test.assertions">
                                 <div ng-switch on="assertion.type">
                                     <div ng-switch-when="responseCode">
-                                        Response Code should equal {{ assertion.expectedResponseCode }} <br />
-                                        Status: {{ assertion.status }} <br />
+                                        <div class="label-heading-2">
+                                            Response Code should equal {{ assertion.expectedResponseCode }} <br />
+                                            Status: {{ assertion.status }} <br />
+                                        </div>
                                     </div>
                                     <div ng-switch-when="responseBody">
-                                        Response parameter {{ assertion.responseBodyParameter }} should equal {{ assertion.expectedValue }} <br />
-                                        Status: {{ assertion.status }} <br />
+                                        <div class="label-heading-2">
+                                            Response parameter {{ assertion.responseBodyParameter }} should equal {{ assertion.expectedValue }} <br />
+                                            Status: {{ assertion.status }} <br />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <input type="button" value="run this suite in browser" ng-click="runTestSuite()"/>
+                        <input type="button" class="button-style-1" value="run this suite in browser" ng-click="runTestSuite()"/>
 
-                        <input type="button" value="run this suite in backend" ng-click="runTestSuiteBackend()" />
+                        <input type="button" class="button-style-1" value="run this suite in backend" ng-click="runTestSuiteBackend()" />
 
                         <br />
                     </div>

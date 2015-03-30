@@ -12,4 +12,4 @@ var app = express();
 var server = app.listen(config.port);
 
 module.exports = app;
-console.log(process.env.NODE_ENV  + ' server running at http://localhost:' + config.port);
+console.log(process.env.NODE_ENV  + ' server https://github.com/zeno60/apitestingguirunning at http://localhost:' + config.port);
